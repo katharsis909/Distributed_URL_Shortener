@@ -19,6 +19,23 @@ The system supports:
 
 The main design goal is to keep URL allocation fast while avoiding collisions across multiple services.
 
+## 1.1 Quick Summary
+
+At a very high level:
+
+1. `RouterService` receives client requests
+2. normal shorten requests are routed by `hash(userId) % 4`
+3. custom shorten, resolve, and delete are routed by first-character ownership
+4. each URL service has its own DB and its own RAM pool
+5. RAM is used for fast allocation, DB is used for correctness and persistence
+
+This means the system stays simple to understand:
+
+1. router decides where request goes
+2. URL service does the real work
+3. DB stores truth
+4. RAM improves speed
+
 ## 2. High-Level Architecture
 
 The request flow is:
@@ -113,6 +130,11 @@ These are exposed by `RouterService`:
    Resolves and redirects
 3. `DELETE /{shortCode}`
    Deletes the mapping and recycles the code
+
+Response style:
+
+1. create and delete return JSON
+2. resolve returns HTTP `302`
 
 ## 7. Internal URL Service API
 
@@ -452,7 +474,26 @@ Project rule:
 1. trivial commits must be named exactly `trivial`
 2. non-trivial commits must use a minimalistic name and include date, month, and year
 
-## 26. File Guide
+## 26. Beginner Checklist
+
+If you want to understand the project from scratch, read in this order:
+
+1. this `documentation.md`
+2. router config and forwarding flow
+3. one URL service manager
+4. one repository interface
+5. one controller
+
+If you want to verify features manually, check in this order:
+
+1. all 5 services start on the configured ports
+2. normal create routes by user hash
+3. custom create routes by first character
+4. resolve returns `302`
+5. delete recycles code to DB
+6. custom DB consume and refill do not corrupt the pool
+
+## 27. File Guide
 
 Useful starting points:
 
