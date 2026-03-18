@@ -172,3 +172,9 @@ During step 1 and step 2:
 2. No availability-check endpoint
 3. No replication/failover in this phase
 4. DB uniqueness + transaction rules are final safety layer
+
+---
+
+### 14. Commit Naming Rule
+1. All trivial commits must be named exactly `trivial`.
+2. All non-trivial commits must use a minimalistic name and include date, month, and year.
