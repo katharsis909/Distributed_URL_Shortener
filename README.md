@@ -65,11 +65,11 @@ Responsibilities:
 
 Current directories:
 
-1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/RouterService`
-2. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/URL_Service1`
-3. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/URL_Service2`
-4. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/URL_Service3`
-5. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/URL_Service4`
+1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/RouterService`
+2. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Service1`
+3. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Service2`
+4. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Service3`
+5. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Service4`
 
 Each service is an independent Maven Spring Boot project.
 
@@ -497,8 +497,8 @@ If you want to verify features manually, check in this order:
 
 Useful starting points:
 
-1. [RouterServiceApplication.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/RouterService/src/main/java/com/urlshortener/router_service/RouterServiceApplication.java)
-2. [RouterForwardingService.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/RouterService/src/main/java/com/urlshortener/router_service/service/RouterForwardingService.java)
-3. [UrlServiceManager.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/URL_Service1/src/main/java/com/urlshortener/u_r_l__service1/service/UrlServiceManager.java)
-4. [AvailableUrlRepository.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/URL_Service1/src/main/java/com/urlshortener/u_r_l__service1/repository/AvailableUrlRepository.java)
-5. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/documentation.md)
+1. [RouterServiceApplication.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/RouterService/src/main/java/com/urlshortener/router_service/RouterServiceApplication.java)
+2. [RouterForwardingService.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/RouterService/src/main/java/com/urlshortener/router_service/service/RouterForwardingService.java)
+3. [UrlServiceManager.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Service1/src/main/java/com/urlshortener/u_r_l__service1/service/UrlServiceManager.java)
+4. [AvailableUrlRepository.java](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Service1/src/main/java/com/urlshortener/u_r_l__service1/repository/AvailableUrlRepository.java)
+5. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/documentation.md)
