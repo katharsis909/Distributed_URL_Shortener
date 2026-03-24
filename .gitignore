@@ -1,6 +1,8 @@
 .DS_Store
 .idea/
 .m2/
+.run/
+data/
 **/.idea/
 **/target/
 **/out/

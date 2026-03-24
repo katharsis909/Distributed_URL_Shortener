@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed URL Shortener</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <main class="page-shell">
+        <section class="hero">
+            <p class="eyebrow">Distributed URL Shortener</p>
+            <h1>Fast short links with a clean control panel.</h1>
+            <p class="hero-copy">
+                Create a short link, claim a custom code, open redirects, and recycle links from one place.
+            </p>
+            <div class="hero-actions">
+                <button class="primary-button" id="focus-create" type="button">Create Short Link</button>
+                <button class="secondary-button" id="jump-tools" type="button">Open Actions</button>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <article class="panel form-panel">
+                <p class="panel-label">Create</p>
+                <h2>Generate a new short link</h2>
+                <p class="panel-copy">Use a user id for normal routing or add a custom code if you want a specific short URL.</p>
+                <form id="shorten-form" class="tool-form">
+                    <label>
+                        <span>User ID</span>
+                        <input id="user-id" name="userId" type="number" min="0" placeholder="42" required>
+                    </label>
+                    <label>
+                        <span>Original URL</span>
+                        <input id="original-url" name="originalUrl" type="url" placeholder="https://example.com" required>
+                    </label>
+                    <label>
+                        <span>Custom code (optional)</span>
+                        <input id="custom-code" name="customCode" type="text" placeholder="myLink">
+                    </label>
+                    <button class="primary-button full-width" type="submit">Send to Router</button>
+                </form>
+            </article>
+
+            <article class="panel form-panel" id="tools">
+                <p class="panel-label">Actions</p>
+                <h2>Open or remove an existing code</h2>
+                <p class="panel-copy">Resolve a short code in a new tab or delete it to send the code back to the available pool.</p>
+                <form id="resolve-form" class="tool-form compact-form">
+                    <label>
+                        <span>Short code</span>
+                        <input id="resolve-code" type="text" placeholder="a00001" required>
+                    </label>
+                    <button class="secondary-button full-width" type="submit">Open Redirect</button>
+                </form>
+                <form id="delete-form" class="tool-form compact-form">
+                    <label>
+                        <span>Short code</span>
+                        <input id="delete-code" type="text" placeholder="a00001" required>
+                    </label>
+                    <button class="secondary-button full-width danger-button" type="submit">Delete Link</button>
+                </form>
+            </article>
+        </section>
+
+        <section class="status-panel">
+            <div class="status-header">
+                <div>
+                    <p class="panel-label">Result</p>
+                    <h2>Latest response</h2>
+                </div>
+                <span class="status-chip" id="api-base">RouterService · 8080</span>
+            </div>
+            <div id="status-box" class="status-box idle">
+                Backend is not called yet.
+            </div>
+            <div id="result-box" class="result-grid hidden">
+                <div>
+                    <span class="detail-key">Short code</span>
+                    <span class="detail-value small-value" id="result-code">-</span>
+                </div>
+                <div>
+                    <span class="detail-key">Open link</span>
+                    <a id="result-link" class="result-link" href="#" target="_blank" rel="noreferrer">-</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="./app.js"></script>
+</body>
+</html>
