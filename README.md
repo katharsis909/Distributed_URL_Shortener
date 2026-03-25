@@ -3,7 +3,7 @@
 This repository is now organized as a simple monorepo:
 
 1. `backend/`
-   Spring Boot microservices for routing, shortening, resolving, recycling, and RAM-pool management
+   Spring Boot microservices for routing, global caching, shortening, resolving, recycling, and RAM-pool management
 2. `frontend/`
    streamlined browser UI for create, resolve, and delete flows
 
@@ -11,11 +11,12 @@ This repository is now organized as a simple monorepo:
 
 Backend services:
 
-1. `backend/RouterService`
-2. `backend/URL_Service1`
-3. `backend/URL_Service2`
-4. `backend/URL_Service3`
-5. `backend/URL_Service4`
+1. `backend/CacheService`
+2. `backend/RouterService`
+3. `backend/URL_Service1`
+4. `backend/URL_Service2`
+5. `backend/URL_Service3`
+6. `backend/URL_Service4`
 
 Frontend:
 
@@ -27,7 +28,7 @@ Frontend:
 
 Backend architecture and implementation details live in:
 
-1. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/backend/documentation.md)
+1. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/backend/documentation.md)
 
 ## Ports
 
@@ -38,6 +39,7 @@ Current backend ports:
 3. `URL_Service2` -> `8082`
 4. `URL_Service3` -> `8083`
 5. `URL_Service4` -> `8084`
+6. `CacheService` -> `8085`
 
 ## Frontend Direction
 

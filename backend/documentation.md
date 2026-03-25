@@ -2,8 +2,9 @@
 
 ## 1. Project Overview
 
-This project is a distributed URL shortener built as 5 Spring Boot services:
+This project is a distributed URL shortener built as 6 Spring Boot services:
 
+1. `CacheService`
 1. `RouterService`
 2. `URL_Service1`
 3. `URL_Service2`
@@ -16,6 +17,7 @@ The system supports:
 2. custom short URL creation
 3. redirect from short code to original URL
 4. deletion and recycling of short codes
+5. global hot-redirect caching with LRU eviction
 
 The main design goal is to keep URL allocation fast while avoiding collisions across multiple services.
 
@@ -24,17 +26,19 @@ The main design goal is to keep URL allocation fast while avoiding collisions ac
 At a very high level:
 
 1. `RouterService` receives client requests
-2. normal shorten requests are routed by `hash(userId) % 4`
-3. custom shorten, resolve, and delete are routed by first-character ownership
-4. each URL service has its own DB and its own RAM pool
-5. RAM is used for fast allocation, DB is used for correctness and persistence
+2. `CacheService` stores hot `shortCode -> originalUrl` mappings
+3. normal shorten requests are routed by `hash(userId) % 4`
+4. custom shorten, resolve, and delete are routed by first-character ownership
+5. each URL service has its own DB and its own RAM pool
+6. RAM is used for fast allocation, DB is used for correctness and persistence
 
 This means the system stays simple to understand:
 
 1. router decides where request goes
-2. URL service does the real work
-3. DB stores truth
-4. RAM improves speed
+2. cache handles repeated redirect lookups
+3. URL service does the durable work
+4. DB stores truth
+5. RAM improves speed
 
 ## 2. High-Level Architecture
 
@@ -44,6 +48,9 @@ The request flow is:
 Client
   |
 RouterService
+  |\
+  | \
+  |  CacheService
   |
 -----------------------------------------
 |          |          |          |
@@ -53,23 +60,26 @@ URL S1     URL S2     URL S3     URL S4
 Responsibilities:
 
 1. `RouterService`
-   Routes incoming client requests to the correct URL service.
-2. `URL_Service1..4`
+   Routes incoming client requests, checks and updates global cache, and forwards misses to the correct URL service.
+2. `CacheService`
+   Keeps a bounded in-memory LRU cache for hot redirect lookups.
+3. `URL_Service1..4`
    Own URL partitions, manage local database state, manage in-memory available-code pool, and execute shorten/resolve/delete logic.
-3. Per-service database
+4. Per-service database
    Stores active mappings and available codes for that service only.
-4. In-memory RAM pool
+5. In-memory RAM pool
    Makes URL allocation fast without hitting the database for every request.
 
 ## 3. Service Layout
 
 Current directories:
 
-1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/backend/RouterService`
-2. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/backend/URL_Service1`
-3. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/backend/URL_Service2`
-4. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/backend/URL_Service3`
-5. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/backend/URL_Service4`
+1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/CacheService`
+2. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/RouterService`
+3. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/URL_Service1`
+4. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/URL_Service2`
+5. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/URL_Service3`
+6. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/backend/URL_Service4`
 
 Each service is an independent Maven Spring Boot project.
 
@@ -82,6 +92,7 @@ The services run on fixed ports:
 3. `URL_Service2` -> `8082`
 4. `URL_Service3` -> `8083`
 5. `URL_Service4` -> `8084`
+6. `CacheService` -> `8085`
 
 ## 5. Routing Rules
 
@@ -136,7 +147,9 @@ Response style:
 1. create and delete return JSON
 2. resolve returns HTTP `302`
 
-## 7. Internal URL Service API
+## 7. Internal Service APIs
+
+### 7.1 Internal URL Service API
 
 Each URL service exposes internal endpoints used by the router:
 
@@ -146,6 +159,20 @@ Each URL service exposes internal endpoints used by the router:
 4. `DELETE /internal/{shortCode}`
 
 These are not meant to be called directly by external clients.
+
+### 7.2 Internal Cache API
+
+`CacheService` exposes internal endpoints used by the router:
+
+1. `GET /internal/cache/{shortCode}`
+2. `PUT /internal/cache`
+3. `DELETE /internal/cache/{shortCode}`
+
+Purpose:
+
+1. resolve can short-circuit on cache hit
+2. create can warm cache immediately
+3. delete can invalidate stale entries
 
 ## 8. Data Model
 
@@ -261,11 +288,14 @@ Current implementation choice:
 Step-by-step:
 
 1. Client requests `GET /{shortCode}` on router
-2. Router uses first character to determine owner service
-3. Router forwards request to `/internal/resolve/{shortCode}`
-4. URL service looks up `short_code` in `urls`
-5. If found, it returns HTTP `302` with `Location` header
-6. Browser or client follows redirect
+2. Router first checks `CacheService` for that short code
+3. On cache hit, router returns HTTP `302` immediately
+4. On cache miss, router uses first character to determine owner service
+5. Router forwards request to `/internal/resolve/{shortCode}`
+6. URL service looks up `short_code` in `urls`
+7. If found, it returns HTTP `302` with `Location` header
+8. Router forwards that redirect and backfills cache
+9. Browser or client follows redirect
 
 ## 14. Delete Flow
 
@@ -276,6 +306,7 @@ Step-by-step:
 3. URL service finds mapping in `urls`
 4. URL service deletes that mapping
 5. URL service inserts the same code back into `available_url`
+6. Router invalidates the matching cache entry if delete succeeded
 
 Current implementation choice:
 
@@ -367,7 +398,7 @@ This structure keeps the code easier to read and avoids the old self-proxy patte
 
 ## 18. Why `RestTemplate` Exists in Router
 
-`RouterService` needs to call the internal endpoints of the URL services.
+`RouterService` needs to call the internal endpoints of the URL services and `CacheService`.
 
 For that, it uses a `RestTemplate` bean.
 
@@ -380,6 +411,12 @@ Reason:
 1. when URL service returns `302`
 2. router should forward that `302` back to the client
 3. router should not follow the redirect itself
+
+Cache-specific behavior:
+
+1. cache failures are treated as non-fatal
+2. if cache is down, router still falls back to the owning URL service
+3. this keeps cache as an optimization rather than a source of truth
 
 ## 18.1 Browser Access and CORS
 
@@ -448,6 +485,7 @@ Router config includes:
 1. normal targets
 2. partition ranges
 3. partition targets
+4. cache service base URL
 
 ## 21. Important Implementation Decisions
 
@@ -455,9 +493,12 @@ Current code intentionally does the following:
 
 1. normal shorten can trigger refill if RAM goes low
 2. custom shorten does not trigger refill
-3. delete recycles to DB only, not directly to RAM
-4. queue plus map state changes are protected by explicit lock
-5. per-service H2 DBs are file-based, not in-memory
+3. create warms cache after a successful shorten response
+4. resolve is cache-first with router-side backfill on miss
+5. delete recycles to DB only, not directly to RAM
+6. delete also invalidates the cache entry on success
+7. queue plus map state changes are protected by explicit lock
+8. per-service H2 DBs are file-based, not in-memory
 
 ## 22. Current Limitations
 
@@ -467,8 +508,9 @@ This project currently does not include:
 2. failover
 3. consistent hashing
 4. central observability
-5. cache for hot redirects
-6. production-grade load balancer in front of multiple routers
+5. production-grade load balancer in front of multiple routers
+6. distributed cache replication or sharding
+7. cache TTLs or admission policies beyond simple LRU
 
 It is a solid distributed systems learning implementation, but not yet a production-hardened distributed platform.
 
@@ -476,11 +518,12 @@ It is a solid distributed systems learning implementation, but not yet a product
 
 General sequence:
 
-1. start `URL_Service1`
-2. start `URL_Service2`
-3. start `URL_Service3`
-4. start `URL_Service4`
-5. start `RouterService`
+1. start `CacheService`
+2. start `URL_Service1`
+3. start `URL_Service2`
+4. start `URL_Service3`
+5. start `URL_Service4`
+6. start `RouterService`
 
 Then call router endpoints on port `8080`.
 
@@ -494,7 +537,7 @@ In this environment, network restrictions may block Maven dependency download fr
 
 The repository now also contains a lightweight frontend in:
 
-1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/frontend`
+1. `/Users/megha_shah/Documents/Ren_Proj/Distributed Systems/URL_Shortener/frontend`
 
 To test the full flow in Chrome:
 
@@ -508,14 +551,28 @@ To stop backend services:
 
 1. run `./stop-backend.sh`
 
-## 25. Commit Naming Rule
+## 25. Testing Notes
+
+Current automated coverage includes:
+
+1. Spring context smoke tests for `CacheService` and `RouterService`
+2. unit tests for `LruCacheService`
+3. unit tests for router cache hit, miss, warm, and invalidation paths
+
+Why router unit tests use a stub instead of Mockito:
+
+1. this environment runs Java 24
+2. Mockito inline mocking currently fails here because of a Byte Buddy compatibility issue
+3. a small `RestTemplate` stub keeps the tests deterministic and toolchain-safe
+
+## 26. Commit Naming Rule
 
 Project rule:
 
 1. trivial commits must be named exactly `trivial`
 2. non-trivial commits must use a minimalistic name and include date, month, and year
 
-## 26. Beginner Checklist
+## 27. Beginner Checklist
 
 If you want to understand the project from scratch, read in this order:
 

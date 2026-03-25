@@ -7,8 +7,9 @@ BACKEND_DIR="$ROOT_DIR/backend"
 RUN_DIR="$ROOT_DIR/.run"
 LOG_DIR="$RUN_DIR/logs"
 PID_DIR="$RUN_DIR/pids"
+DATA_DIR="$ROOT_DIR/data"
 
-mkdir -p "$LOG_DIR" "$PID_DIR"
+mkdir -p "$LOG_DIR" "$PID_DIR" "$DATA_DIR"
 
 if command -v mvn >/dev/null 2>&1; then
   MVN_CMD="mvn"
@@ -20,6 +21,7 @@ else
 fi
 
 SERVICES=(
+  "CacheService"
   "URL_Service1"
   "URL_Service2"
   "URL_Service3"
@@ -40,7 +42,7 @@ for service in "${SERVICES[@]}"; do
   echo "Starting $service ..."
   (
     cd "$service_dir"
-    nohup "$MVN_CMD" spring-boot:run >"$log_file" 2>&1 &
+    URL_SHORTENER_DATA_DIR="$DATA_DIR" nohup "$MVN_CMD" spring-boot:run >"$log_file" 2>&1 &
     echo $! >"$pid_file"
   )
 done
