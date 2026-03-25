@@ -28,7 +28,7 @@ Frontend:
 
 Backend architecture and implementation details live in:
 
-1. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/URL_Shortener/backend/documentation.md)
+1. [documentation.md](/Users/megha_shah/Documents/Ren_Proj/Distributed%20Systems/Distributed%20Systems/url%20shortener/backend/documentation.md)
 
 ## Ports
 

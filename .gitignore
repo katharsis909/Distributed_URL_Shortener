@@ -3,6 +3,8 @@
 .m2/
 .run/
 data/
+**/.run/
+**/data/
 **/.idea/
 **/target/
 **/out/
